@@ -656,7 +656,7 @@ void prelucrare_text_case(char text[])
     while(text[0] == ' ')
         strcpy(text, text+1);
 
-    /// GASESC UNDE INCHEPE ":"
+    /// GASESC UNDE INCEPE ":"
     char *capat = strstr(text, ":");
     int poz = (int)(capat - text);
 
