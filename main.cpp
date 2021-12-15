@@ -1,6 +1,7 @@
 #define _WIN32_WINNT 0x0500
 #include <windows.h>
 #include <graphics.h>
+#include <fstream>
 #include <winbgim.h>
 #include <cstring>
 #include <iostream>
@@ -118,6 +119,8 @@ struct rgb_clasic
 struct poz{
     int x,y;
 };
+
+
 
 void color_switch(int x_stanga, int y_sus, int Lsus)
 {
@@ -1035,11 +1038,12 @@ void Add_Color_and_Text(nod *r)
     }
 }
 
-void procesare()
+void procesare(char userfilename[])
 {
+
     /// OPEN FILE
     FILE *fis1;
-    fis1 = fopen("text.in", "r");
+    fis1 = fopen(userfilename, "r");
 
     while(fgets(text, MAX_TEXT, fis1))
     {
@@ -1145,11 +1149,49 @@ void drawButton(poz btnPoz, int btnWidth, int btnHeight, char btnText[]){
 void drawFrame(poz frmPoz, int frmWidth, int frmHeight){
     rectangle(frmPoz.x, frmPoz.y, frmPoz.x + frmWidth, frmPoz.y + frmHeight);
 }
+void scriere_fisier(){
+    FILE *prgmNS;
+    prgmNS = fopen("program.ns", "w");
 
+    char ch;
+    while( (ch = getchar()) != EOF ) {
+        putc(ch, prgmNS);
+    }
+
+    fclose(prgmNS);
+}
+///Buttons List
+struct btn{
+    poz coord;
+    char txt[31];
+    int width, height, event;
+}b[20];
+
+char bttns[20][31];
+void generate_buttons (btn b[], poz ctr){
+    int i=0;
+    strcpy(bttns[0], "New");
+    strcpy(bttns[1], "Generate");
+
+    while(bttns[i][0]!=NULL){
+        b[i].coord.x = 20 + 170*(i) + ctr.x;
+        b[i].coord.y = 80 + ctr.y;
+        b[i].width = 120;
+        b[i].height = 50;
+        b[i].event = i+1;
+        strcpy(b[i].txt, bttns[i]);
+        drawButton(b[i].coord, b[i].width, b[i].height, b[i].txt);
+        i++;
+    }
+}
+void bringConsoleToFront(){
+    HWND consoleWindow = GetConsoleWindow();
+    SetForegroundWindow(consoleWindow);
+}
 void settingsSection(){
     poz secPoz;
     int secWidth, secHeight;
-    secPoz.x = 5 * (window_width / 2) / 100 + window_width/2;    ///Starts 5% indented relative to the left half width
+    secPoz.x = 5 * (window_width / 2) / 100 + window_width/2;    ///Starts 5% indented relative to the right half width
     secPoz.y = window_height/5;                                  ///Starts 20% down from the top
     secWidth = 90 * (window_width / 2) / 100;   /// 90% of the left half's width (centered horizontally)
     secHeight = 65 * window_height / 100;       /// 65% of screen's height
@@ -1166,27 +1208,58 @@ void settingsSection(){
     outtextxy(titlePoz.x, titlePoz.y, secTitle);
 
     ///Buttons
-    poz btn1;
-    btn1.x = 20 + secPoz.x;
-    btn1.y = 80 + secPoz.y;
-    drawButton(btn1, 100, 50, "test1235");
+    generate_buttons(b,secPoz);
 
     ///Moving the console
     HWND consoleWindow = GetConsoleWindow();
 
     MoveWindow(consoleWindow, secPoz.x, secPoz.y + secHeight/2 , 101*secWidth/100 , 110*secHeight/200, TRUE);
-	SetForegroundWindow(consoleWindow);
+	bringConsoleToFront();
+}
+
+void diagram_generation(){
+    //radacina=NULL;
+    settextstyle(stil, HORIZ_DIR, dim);
+    procesare("program.ns");
+    set_x_and_lungime(radacina, 1);
+    desen(radacina);
+    Add_Color_and_Text(radacina);
+}
+void event_handler(poz mouse){
+    //int i=0;
+    //while(bttns[i][0]!=NULL){
+        if (mouse.x>=b[0].coord.x && mouse.x<=b[0].coord.x + b[0].width && mouse.y>=b[0].coord.y && mouse.y<=b[0].coord.y + b[0].height)
+            scriere_fisier();
+        else if (mouse.x>=b[1].coord.x && mouse.x<=b[1].coord.x + b[1].width && mouse.y>=b[1].coord.y && mouse.y<=b[1].coord.y + b[1].height)
+            diagram_generation();
+    //}
+}
+void console_handler(){
+    ///Setting console title
+    SetConsoleTitle("NS-diagram Console");
+
+    do{
+        if(ismouseclick(WM_LBUTTONDOWN)) {
+            clearmouseclick(WM_LBUTTONDOWN);
+            bringConsoleToFront();
+            //fflush(stdin);
+            poz mouse;
+            mouse.x=mousex();
+            mouse.y=mousey();
+            event_handler(mouse);
+            }
+    }while(1);
+
+    //scriere_fisier();
+    //diagram_generation();
 }
 int main()
 {
     windowInit();
     titlePrint("NS Diagram Drawer");
     settingsSection();
-    settextstyle(stil, HORIZ_DIR, dim);
-    procesare();
-    set_x_and_lungime(radacina, 1);
-    desen(radacina);
-    Add_Color_and_Text(radacina);
+    console_handler();
+
     getch();
     closegraph();
     return 0;
