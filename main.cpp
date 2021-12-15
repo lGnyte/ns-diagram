@@ -1,29 +1,24 @@
-#define _WIN32_WINNT 0x0500
-#include <windows.h>
 #include <graphics.h>
-#include <winbgim.h>
 #include <cstring>
 #include <iostream>
 #include <stdio.h>
 #include <cmath>
 #define dim 1
 #define stil 6
-#define x_initial 30
-#define y_initial 100
-#define distanta 10
+#define x_initial 5
+#define y_initial 5
+#define distanta 16
 #define nr_culori 5
 #define MAX_TEXT 100
 using namespace std;
 char text[MAX_TEXT], anterior[MAX_TEXT], copie[MAX_TEXT];
+int LMAX = 1000;
 float ratie = 1.5;
-int x_final, y_final,
-    window_width=getmaxwidth(),
-    window_height=getmaxheight();
-int LMAX = window_width / 2 - 50; /// lungimea este adaptata la dimensiunea ferestrei
-enum instructiune_speciala {CLASIC, CONDITIE, ADV, FALS, LOOP_FIRST, IN_LOOP, LOOP_LAST, SWITCH_CASE, CAZ, ROOT, IGNORA_DA, IGNORA_NU};
+int x_final, y_final;
+enum instructiune_speciala {CLASIC, CONDITIE, ADV, FALS, LOOP_FIRST, IN_LOOP, LOOP_LAST, SWITCH_CASE, CAZ, ROOT, IGNORA_DA, IGNORA_NU, IN_CAZ};
 instructiune_speciala cod;
 
-int culoare = 0;
+int culoare = 1;
 
 struct nod
 {
@@ -37,6 +32,27 @@ struct nod
     nod * urm[30];
     nod * parinte = NULL;
 } *inainte, *radacina;
+
+struct rgb_switch
+{
+    int red[nr_culori] = {79, 59};
+    int green[nr_culori] = {52, 23};
+    int blue[nr_culori] = {102, 4};
+} CuloareSwitch;
+
+struct rgb_case
+{
+    int red[nr_culori] = {147, 118};
+    int green[nr_culori] = {56, 70};
+    int blue[nr_culori] = {95, 4};
+} CuloareCase;
+
+struct rgb_in_case
+{
+    int red[nr_culori] = {159, 187};
+    int green[nr_culori] = {107, 123};
+    int blue[nr_culori] = {153, 61};
+} CuloareInCase;
 
 struct rgb_loop
 {
@@ -94,64 +110,80 @@ struct rgb_clasic
     int blue[nr_culori] = {120, 137};
 } CuloareClasic;
 
-///Universal position struct
-struct poz{
-    int x,y;
-};
+void color_switch(int x_stanga, int y_sus, int Lsus)
+{
+    setfillstyle(SOLID_FILL, COLOR(CuloareSwitch.red[culoare], CuloareSwitch.green[culoare], CuloareSwitch.blue[culoare]));
+    floodfill(x_stanga + Lsus/2, y_sus + 2, WHITE);
+    setbkcolor(COLOR(CuloareSwitch.red[culoare], CuloareSwitch.green[culoare], CuloareSwitch.blue[culoare]));
+}
+
+void color_case(int x_stanga, int y_sus, int Lsus)
+{
+    setfillstyle(SOLID_FILL, COLOR(CuloareCase.red[culoare], CuloareCase.green[culoare], CuloareCase.blue[culoare]));
+    floodfill(x_stanga + Lsus/2, y_sus + 2, WHITE);
+    setbkcolor(COLOR(CuloareCase.red[culoare], CuloareCase.green[culoare], CuloareCase.blue[culoare]));
+}
+
+void color_in_case(int x_stanga, int y_sus, int Lsus)
+{
+    setfillstyle(SOLID_FILL, COLOR(CuloareInCase.red[culoare], CuloareInCase.green[culoare], CuloareInCase.blue[culoare]));
+    floodfill(x_stanga + Lsus/2, y_sus + 2, WHITE);
+    setbkcolor(COLOR(CuloareInCase.red[culoare], CuloareInCase.green[culoare], CuloareInCase.blue[culoare]));
+}
 
 void color_loop(int x_stanga, int y_sus, int Lsus)
 {
     setfillstyle(SOLID_FILL, COLOR(CuloareLoop.red[culoare], CuloareLoop.green[culoare], CuloareLoop.blue[culoare]));
-    floodfill(x_stanga + Lsus/2 , y_sus + 2, WHITE);
+    floodfill(x_stanga + Lsus/2, y_sus + 2, WHITE);
     setbkcolor(COLOR(CuloareLoop.red[culoare], CuloareLoop.green[culoare], CuloareLoop.blue[culoare]));
 }
 
 void color_in_loop(int x_stanga, int y_sus, int Lsus)
 {
     setfillstyle(SOLID_FILL, COLOR(CuloareInLoop.red[culoare], CuloareInLoop.green[culoare], CuloareInLoop.blue[culoare]));
-    floodfill(x_stanga + Lsus/2 , y_sus + 2, WHITE);
+    floodfill(x_stanga + Lsus/2, y_sus + 2, WHITE);
     setbkcolor(COLOR(CuloareInLoop.red[culoare], CuloareInLoop.green[culoare], CuloareInLoop.blue[culoare]));
 }
 
 void color_conditie(int x_stanga, int y_sus, int Lsus)
 {
     setfillstyle(SOLID_FILL, COLOR(CuloareConditie.red[culoare], CuloareConditie.green[culoare], CuloareConditie.blue[culoare]));
-    floodfill(x_stanga + Lsus/2 , y_sus + 2, WHITE);
+    floodfill(x_stanga + Lsus/2, y_sus + 2, WHITE);
     setbkcolor(COLOR(CuloareConditie.red[culoare], CuloareConditie.green[culoare], CuloareConditie.blue[culoare]));
 }
 
 void color_DA(int x_stanga, int y_sus)
 {
     setfillstyle(SOLID_FILL, COLOR(CuloareDA.red[culoare], CuloareDA.green[culoare], CuloareDA.blue[culoare]));
-    floodfill(x_stanga + 1 , y_sus + 5, WHITE);
+    floodfill(x_stanga + 1, y_sus + 5, WHITE);
     setbkcolor(COLOR(CuloareDA.red[culoare], CuloareDA.green[culoare], CuloareDA.blue[culoare]));
 }
 
 void color_NU(int x_dreapta, int y_sus)
 {
     setfillstyle(SOLID_FILL, COLOR(CuloareNU.red[culoare], CuloareNU.green[culoare], CuloareNU.blue[culoare]));
-    floodfill(x_dreapta - 1 , y_sus + 5, WHITE);
+    floodfill(x_dreapta - 1, y_sus + 5, WHITE);
     setbkcolor(COLOR(CuloareNU.red[culoare], CuloareNU.green[culoare], CuloareNU.blue[culoare]));
 }
 
 void color_clasic(int x_stanga, int y_sus, int Lsus)
 {
     setfillstyle(SOLID_FILL, COLOR(CuloareClasic.red[culoare], CuloareClasic.green[culoare], CuloareClasic.blue[culoare]));
-    floodfill(x_stanga + Lsus/2 , y_sus + 2, WHITE);
+    floodfill(x_stanga + Lsus/2, y_sus + 2, WHITE);
     setbkcolor(COLOR(CuloareClasic.red[culoare], CuloareClasic.green[culoare], CuloareClasic.blue[culoare]));
 }
 
 void color_adv(int x_stanga, int y_sus, int Lsus)
 {
     setfillstyle(SOLID_FILL, COLOR(CuloareADV.red[culoare], CuloareADV.green[culoare], CuloareADV.blue[culoare]));
-    floodfill(x_stanga + Lsus/2 , y_sus + 2, WHITE);
+    floodfill(x_stanga + Lsus/2, y_sus + 2, WHITE);
     setbkcolor(COLOR(CuloareADV.red[culoare], CuloareADV.green[culoare], CuloareADV.blue[culoare]));
 }
 
 void color_fals(int x_stanga, int y_sus, int Lsus)
 {
     setfillstyle(SOLID_FILL, COLOR(CuloareFALS.red[culoare], CuloareFALS.green[culoare], CuloareFALS.blue[culoare]));
-    floodfill(x_stanga + Lsus/2 , y_sus + 2, WHITE);
+    floodfill(x_stanga + Lsus/2, y_sus + 2, WHITE);
     setbkcolor(COLOR(CuloareFALS.red[culoare], CuloareFALS.green[culoare], CuloareFALS.blue[culoare]));
 }
 
@@ -170,6 +202,17 @@ int get_y_from_previous(nod *r)
         }
         else
             return  a;
+    }
+    else if(r->tip == SWITCH_CASE)
+    {
+        int v[30] = {0};
+        int maxx = 0;
+        for(int k = 1; k <= r->nr_fii; k++)
+            v[k] = get_y_from_previous(r->urm[k]);
+        for(int k = 1; k <= r->nr_fii; k++)
+            if(maxx < v[k])
+                maxx = v[k];
+        return maxx;
     }
     else
     {
@@ -217,9 +260,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         q->urm[q->nr_fii] = p;
 
         /// INITIALIZATION
-        p->x = x_initial;
         p->y = y_initial;
-        p->lungime = LMAX;
 
         /// TYPE ASSIGMENT
         p->tip = cod;
@@ -255,9 +296,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         p->parinte = q; /// parintele lui e "DA"
 
         /// COORDONATE
-        p->x = anterior->x;
         p->y = anterior->y + 3 * textheight(anterior->linie_text);
-        p->lungime = anterior->lungime/2; /// jumatate din lungimea conditie
 
         /// TIP
         p->tip = cod;
@@ -265,7 +304,30 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         /// RETURN NODE
         return p;
     }
-    else if(strstr(text_anterior, "else")) /// !!!!!! am de modificat in fct de i (daca am mai multe if else)
+    else if(cod == CAZ)
+    {
+        /// SEARCH FOR PARENT
+        while(anterior->tip != SWITCH_CASE)
+            anterior = anterior->parinte;
+
+        /// LINK NODE TO PARENT
+        anterior->nr_fii++;
+        anterior->urm[anterior->nr_fii] = p;
+        p->parinte = anterior;
+
+        /// COORDONATE
+        if(anterior->nr_fii == 1)
+            p->y = anterior->y + ratie * textheight(text);
+        else
+            p->y = anterior->urm[1]->y;
+
+        /// TIP
+        p->tip = cod;
+
+        /// RETURN NODE
+        return p;
+    }
+    else if(strstr(text_anterior, "else"))
     {
         /// CREATE NODE "NU"
         nod *q = new nod;
@@ -275,7 +337,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
 
         /// GO TO CONDITIE:: (ADV -> "DA" -> CONDITIE)
         while(anterior->nr_spatii != i - 4)
-            anterior = anterior->parinte->parinte;
+            anterior = anterior->parinte;
 
         /// LINK "NU" TO CONDITIE
         anterior->nr_fii++;
@@ -288,9 +350,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         p->parinte = q;
 
         /// COORDONATE
-        p->x = anterior->x + anterior->lungime/2;
         p->y = anterior->y + 3 * textheight(anterior->linie_text);
-        p->lungime = anterior->lungime/2;
 
         /// TIP
         p->tip = cod;
@@ -303,11 +363,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         /// AU ACELASI PARINTE
         p->parinte = anterior->parinte;
 
-        /// AU ACEEASI LUNGIME
-        p->lungime = anterior->lungime;
-
         /// COORDONATE
-        p->x = anterior->x;
         p->y = anterior->y + ratie * textheight(anterior->linie_text);
 
         /// LEG DE PARINTELE FRATELUI
@@ -331,9 +387,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         anterior->urm[anterior->nr_fii] = p;
 
         /// COORDONATE
-        p->x = anterior->x;
         p->y = anterior->y + ratie*textheight(anterior->linie_text);
-        p->lungime = anterior->lungime;
 
         /// TIP
         if (cod != CLASIC)
@@ -354,9 +408,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
             start = start->urm[start->nr_fii];
 
         /// COORDONATE
-        p->x = start->x; /// iau coordonata pe Ox a fratelui
         p->y = get_y_from_previous(start);
-        p->lungime = start->lungime;
 
         /// TIP
         if(cod == CLASIC) /// daca inca nu are atribuit un cod
@@ -419,12 +471,29 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         p->parinte = q;
 
         /// COORDONATE
-        p->x = start->x + start->lungime/2;
         p->y = start->y + 3 * textheight(start->linie_text);
-        p->lungime = start->lungime/2;
 
         /// TIP
         p->tip = cod;
+
+        /// RETURN NODE
+        return p;
+    }
+    else if(anterior->tip == CAZ)
+    {
+        /// LINK NODE TO PARENT
+        anterior->nr_fii++;
+        anterior->urm[anterior->nr_fii] = p;
+        p->parinte = anterior;
+
+        /// COORDONATE
+        p->y = anterior->y + ratie * textheight(text);
+
+        /// TIP
+        if(cod == CLASIC)
+            p->tip = IN_CAZ;
+        else
+            p->tip = cod;
 
         /// RETURN NODE
         return p;
@@ -528,6 +597,59 @@ void prelucrare_text_until(char text[])
         strcpy(text + lung - 1, text + lung); /// SCAP DE SPATIUL ACELA
 }
 
+void prelucrare_text_switch(char text[])
+{
+    /// ELIMIN "SWITCH"
+    strcpy(text, text + strlen("switch"));
+
+    /// ELIMIN SPATIILE DINTRE SWITCH SI CONDITIE
+    while(text[0] == ' ')
+        strcpy(text, text+1);
+
+    /// ELIMIN SPATIILE DIN CELALALT CAPAT
+    int lung = strlen(text) - 1;
+    while(text[lung] == ' ')
+        lung--;
+
+    if(text[lung] == '\n')
+        text[lung] = '\0';
+
+    /// ADD END OF STRING
+    text[lung+1] = '\0';
+
+    /// DACA ARE SPATII MULTIPLE INAUNTRU
+    if(strstr(text, "  "))
+        elimin_spatii_multiple(text);
+}
+
+void prelucrare_text_case(char text[])
+{
+    /// ELIMIN "CASE"
+    strcpy(text, text + strlen("case"));
+
+    /// ELIMIN SPATIILE DINTRE "CASE" SI cazul curent
+    while(text[0] == ' ')
+        strcpy(text, text+1);
+
+    /// GASESC UNDE INCHEPE ":"
+    char *capat = strstr(text, ":");
+    int poz = (int)(capat - text);
+
+    /// CARACTERUL ANTERIOR
+    poz--;
+
+    /// ELIMIN SPATIILE DINTRE cazul curent SI ":"
+    while(text[poz] == ' ')
+        poz--;
+
+    /// ADD END OF STRING
+    text[++poz] = '\0';
+
+    /// DACA ARE SPATII MULTIPLE INAUNTRU
+    if(strstr(text, "  "))
+        elimin_spatii_multiple(text);
+}
+
 instructiune_speciala simplify(char text[], int start)
 {
     /// ELIMIN SPATIILE DINAINTE
@@ -577,6 +699,26 @@ instructiune_speciala simplify(char text[], int start)
     {
         prelucrare_text_while_for(text);
         return LOOP_FIRST;
+    }
+
+    /// SWITCH
+    if((int)(strstr(text, "switch ") - text) == 0)
+    {
+        prelucrare_text_switch(text);
+        return SWITCH_CASE;
+    }
+
+    /// CASE
+    if((int)(strstr(text, "case ") - text) == 0)
+    {
+        prelucrare_text_case(text);
+        return CAZ;
+    }
+    /// DEFAULT
+    if((int)(strstr(text, "default") - text) == 0)
+    {
+        strcpy(text, "default");
+        return CAZ;
     }
 
     /// REPREAT UNTIL
@@ -697,33 +839,87 @@ void chenar(int x_stanga, int y_sus, int x_dreapta, int y_jos)
     rectangle(x_stanga, y_sus, x_dreapta, y_jos);
 }
 
+void set_x_and_lungime(nod *r, int nr_fiu)
+{
+    if(r != NULL)
+    {
+        if(r != radacina)
+        {
+            if(r->parinte->tip == LOOP_FIRST) /// PARINTELE ESTE UN FOR, WHILE
+            {
+                /// MA DUC SPRE DREAPTA CU O DISTANTA
+                r->x = r->parinte->x + distanta;
+
+                /// SCAD DISTANTA DIN LUNGIME
+                r->lungime = r->parinte->lungime - distanta;
+            }
+            else if(r->parinte->tip == ROOT)
+            {
+                /// INITIALIZARE STANDARD
+                r->x = x_initial;
+                r->lungime = LMAX;
+            }
+            else if(r->parinte->tip == IGNORA_NU) /// PT INSTRUCTIUNILE DE PE RAMURA FALSE
+            {
+                /// CAUT PRIMA INSTRUCTIUNE DE PE RAMURA TRUE SI MA RAPORTEZ LA EA
+
+                /// COORDONATA PE AXA OX
+                r->x = r->parinte->parinte->urm[1]->urm[1]->x + r->parinte->parinte->urm[1]->urm[1]->lungime;
+
+                /// AU ACEEASI LUNGIME
+                r->lungime = r->parinte->parinte->urm[1]->urm[1]->lungime;
+            }
+            else if(r->parinte->tip == IGNORA_DA) /// PT INSTRUCTIUNILE DE PE RAMURA TRUE
+            {
+                /// MA RAPORTEZ LA CONDITIE
+                r->x = r->parinte->parinte->x; /// ACEEASI COORDONATA PE AXA OX
+
+                /// JUMATATE DIN LUNGIMEA CONDITIEI
+                r->lungime = r->parinte->parinte->lungime/2;
+            }
+            else if(r->parinte->tip == SWITCH_CASE)
+            {
+                if(nr_fiu == 1)
+                {
+                    r->lungime = r->parinte->lungime / r->parinte->nr_fii;
+                    r->x = r->parinte->x;
+                }
+                else if(nr_fiu == r->parinte->nr_fii)
+                {
+                    r->x = r->parinte->x + (nr_fiu-1) * r->parinte->urm[1]->lungime;
+                    r->lungime = r->parinte->lungime + r ->parinte->x - r->x;
+                }
+                else
+                {
+                    r->lungime = r->parinte->urm[1]->lungime;
+                    r->x = r->parinte->x + (nr_fiu-1) * r->lungime;
+                }
+            }
+            else
+            {
+                /// NU APAR SCHIMBARI
+                r->x = r->parinte->x;
+                r->lungime = r->parinte->lungime;
+            }
+        }
+        else
+        {
+            /// pt radacina
+            r->x = x_initial;
+            r->lungime = LMAX;
+        }
+
+        for(int k = 1; k <= r->nr_fii; k++) /// GO TO CHILDREN
+            set_x_and_lungime(r->urm[k], k);
+    }
+}
+
 void desen(nod *r)
 {
-    delay(100);
     if(r != NULL)
     {
         if(r!= radacina && r->tip != IGNORA_DA && r->tip != IGNORA_NU)
         {
-            /// CALCULEZ CAT MA DUC SPRE DREAPTA CU BLOCUL
-            r->spre_dreapta = nr_loops(r) * distanta;
-
-            /// SCHIMB COORDONATA PE Ox && LUNGIMEA
-            r->x += r->spre_dreapta;
-            r->lungime -= r->spre_dreapta;
-
-            /// PT RAMURILE TRUE SI FALSE E DIFERIT
-            if(r->parinte->tip == IGNORA_DA)
-                {
-                    r->x = r->parinte->parinte->x;
-                    r->lungime = r->parinte->parinte->lungime / 2;
-                }
-            else if(r->parinte->tip == IGNORA_NU)
-            {
-                r->x = r->parinte->parinte->urm[1]->urm[1]->x + r->parinte->parinte->urm[1]->urm[1]->lungime;
-                r->lungime = r->parinte->parinte->lungime/2;
-            }
-            //cout << r->linie_text << "   " << r->x << " " << r->lungime << '\n';
-
             /// DRAWING
             switch (r->tip)
             {
@@ -736,6 +932,10 @@ void desen(nod *r)
                 /// chenar pt false
                 chenar(r->x + r->lungime/2, r->urm[1]->urm[1]->y, r->x + r->lungime, get_y_from_previous(r));
                 break;
+            case CAZ:
+                DrawRectangle(r->linie_text, r->x, r->y, r->lungime);
+                chenar(r->x, r->y, r->x + r->lungime, get_y_from_previous(r->parinte));
+                break;
             default:
                 DrawRectangle(r->linie_text, r->x, r->y, r->lungime);
 
@@ -747,10 +947,10 @@ void desen(nod *r)
         }
         else if (r == radacina)
             /// bordura
-            {
-                chenar(x_initial, y_initial, x_initial + LMAX, get_y_from_previous(radacina));
-                color_clasic(x_initial, y_initial, LMAX);
-            }
+        {
+            chenar(x_initial, y_initial, x_initial + LMAX, get_y_from_previous(radacina));
+            color_clasic(x_initial, y_initial, LMAX);
+        }
 
         /// GO TO CHILDREN
         for(int k = 1; k <= r->nr_fii; k++)
@@ -783,6 +983,18 @@ void Add_Color_and_Text(nod *r)
                 break;
             case IN_LOOP:
                 color_in_loop(r->x, r->y, r->lungime);
+                DrawRectangle_text(r->linie_text, r->x, r->y, r->lungime);
+                break;
+            case SWITCH_CASE:
+                color_switch(r->x, r->y, r->lungime);
+                DrawRectangle_text(r->linie_text, r->x, r->y, r->lungime);
+                break;
+            case CAZ:
+                color_case(r->x, r->y, r->lungime);
+                DrawRectangle_text(r->linie_text, r->x, r->y, r->lungime);
+                break;
+            case IN_CAZ:
+                color_in_case(r->x, r->y, r->lungime);
                 DrawRectangle_text(r->linie_text, r->x, r->y, r->lungime);
                 break;
             default:
@@ -832,14 +1044,12 @@ void procesare()
             case LOOP_FIRST: /// DUPA WHILE, FOR...
                 cod = IN_LOOP;
                 break;
-            case SWITCH_CASE:
-                cod = CAZ;
-                break;
             }
         }
 
         /// DACA AM CE AFISA
-        if(strlen(text) > 1)
+
+        if(strlen(text) >= 1)
         {
             /// ADAUGARE NOD LA ARBORE + RETINEREA ULTIMULUI DREPT REPER
             inainte = creare_nod(text, inainte, i, cod, anterior);
@@ -853,103 +1063,12 @@ void procesare()
     fclose(fis1);
 }
 
-void windowInit(){
-    ///initwindow(1400, 790);
-    initwindow(window_width, window_height,"NS-diagram drawer");
-    line(window_width/2, 0, window_width/2, window_height); ///vertical separation line
-}
-void titlePrint(char title[]){
-    settextstyle(10,0,7); ///Text Style
-    int txt_height = textheight(title), ///Title Height
-    txt_width = textwidth(title);       ///Title Width
-
-    /// Adjusting font size for smaller screens/window
-    if(window_width/2 < txt_width){
-        settextstyle(10,0,3);
-        txt_height = textheight(title), ///Updating
-        txt_width = textwidth(title);   ///text sizes
-    }
-
-    ///Centering the Title (calculations)
-    int txt_startPos = (window_width/2 - txt_width)/2 + window_width/2,  /// centered between window left and window center (vertical line)
-    txt_verticalPos = 10;                               /// vertical position
-
-    ///Printing the Centered Title
-    outtextxy(txt_startPos, txt_verticalPos, title);
-
-    ///Underline
-    line(txt_startPos, txt_verticalPos + txt_height - 5 ,txt_startPos + txt_width, txt_verticalPos + txt_height - 5);
-}
-poz getCenteredTextXY(int ctrWidth, int ctrHeight, char text[]){    ///Vertical + Horizontal centering
-    poz txtCenteredPoz; ///Position to be returned
-    int txtHeight, txtWidth;
-    txtHeight = textheight(text);
-    txtWidth = textwidth(text);
-
-    txtCenteredPoz.x = (ctrWidth - txtWidth) / 2;   ///Centered x coord
-    txtCenteredPoz.y = (ctrHeight - txtHeight) / 2; ///Centered y coord
-
-    return txtCenteredPoz; ///returns coordinates
-}
-int getCenteredTextX(int ctrWidth, char text[]){    ///Horizontal centering
-    return (ctrWidth - textwidth(text)) / 2;        ///returns x coordinate
-}
-
-int getCenteredTextY(int ctrHeight, char text[]){   ///Vertical centering
-    return (ctrHeight - textheight(text)) / 2;      ///returns y coordinate
-}
-
-void drawButton(poz btnPoz, int btnWidth, int btnHeight, char btnText[]){
-    settextstyle(10,0,3);
-    poz txtCentered;
-    txtCentered = getCenteredTextXY(btnWidth, btnHeight, btnText); ///Centering the text within the button
-
-    rectangle(btnPoz.x, btnPoz.y, btnPoz.x + btnWidth, btnPoz.y+btnHeight);
-    outtextxy(btnPoz.x + txtCentered.x, btnPoz.y + txtCentered.y, btnText);
-}
-
-void drawFrame(poz frmPoz, int frmWidth, int frmHeight){
-    rectangle(frmPoz.x, frmPoz.y, frmPoz.x + frmWidth, frmPoz.y + frmHeight);
-}
-
-void settingsSection(){
-    poz secPoz;
-    int secWidth, secHeight;
-    secPoz.x = 5 * (window_width / 2) / 100 + window_width/2;    ///Starts 5% indented relative to the left half width
-    secPoz.y = window_height/5;                                  ///Starts 20% down from the top
-    secWidth = 90 * (window_width / 2) / 100;   /// 90% of the left half's width (centered horizontally)
-    secHeight = 65 * window_height / 100;       /// 65% of screen's height
-
-    ///Section's frame
-    drawFrame(secPoz, secWidth, secHeight);
-
-    ///Section's title
-    settextstyle(10,0,5);
-    poz titlePoz;
-    char secTitle[]="Settings";
-    titlePoz.x = secPoz.x + getCenteredTextX(secWidth, secTitle);
-    titlePoz.y = secPoz.y + 15;
-    outtextxy(titlePoz.x, titlePoz.y, secTitle);
-
-    ///Buttons
-    poz btn1;
-    btn1.x = 20 + secPoz.x;
-    btn1.y = 80 + secPoz.y;
-    drawButton(btn1, 100, 50, "test1235");
-
-    ///Moving the console
-    HWND consoleWindow = GetConsoleWindow();
-
-    MoveWindow(consoleWindow, secPoz.x, secPoz.y + secHeight/2 , 101*secWidth/100 , 110*secHeight/200, TRUE);
-	SetForegroundWindow(consoleWindow);
-}
 int main()
 {
-    windowInit();
-    titlePrint("NS Diagram Drawer");
-    settingsSection();
+    initwindow(1400, 790);
     settextstyle(stil, HORIZ_DIR, dim);
     procesare();
+    set_x_and_lungime(radacina, 1);
     desen(radacina);
     Add_Color_and_Text(radacina);
     getch();
