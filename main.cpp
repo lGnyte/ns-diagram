@@ -154,6 +154,8 @@ struct poz
     int x,y;
 } console,secPoz;
 
+bool info;
+
 ///Buttons List
 struct btn
 {
@@ -690,7 +692,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
             nu->tip = IGNORA_NU;
 
             /// GO TO CONDITIE
-            while(anterior->nr_taburi != i - 2) /// -8 pt ca e intr-un repreat until dintr-un else
+            while(anterior->nr_taburi != i - 2) /// -2 pt ca e intr-un repreat until dintr-un else
                 anterior = anterior->parinte;
 
             /// LINK "NU" TO CONDITIE
@@ -718,9 +720,6 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         /// COORDONATE
         p->y = anterior->y + ratie * textheight(anterior->linie_text);
 
-        /// AU ACELASI PARINTE
-
-
         if(anterior->tip != LOOP_LAST)
         {
             /// LINK TO PARENT
@@ -739,7 +738,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         else
         {
             /// LINK TO PARENT
-            p->parinte = anterior->parinte->parinte; /// loop_last -> -until- -> parent
+            p->parinte = anterior->parinte->parinte; /// loop_last -> repeat -> parent
 
             /// LEG DE PARINTELE FRATELUI
             p->parinte->nr_fii++;
@@ -778,7 +777,7 @@ nod *creare_nod(char text[], nod *anterior, int i, instructiune_speciala cod, ch
         if (cod != CLASIC)
             p->tip = cod;
         else
-            p->tip = ADV;
+            p->tip = IN_LOOP;
 
         /// RETURN NODE
         return p;
@@ -1269,7 +1268,8 @@ void DrawTriangle_false_text(int x_dreapta, int y_sus, int x_mijloc, int y_mijlo
 
 void DrawTriangle_true_text(int x_stanga, int y_stanga, int x_mijloc, int y_mijloc)
 {
-    settextstyle(stil, 0, dim);
+    if(!info)
+        settextstyle(stil, 0, dim);
     char text[3];
     strcpy(text, "DA");
     int latime = textheight(text);
@@ -2827,6 +2827,7 @@ void fereastra_info()
     setbkcolor(BLACK);
     cleardevice();
     generate_button_back();
+    info = 1;
     afisare_info_general();
     poz mouse;
     int i = 4;
@@ -2863,6 +2864,7 @@ void fereastra_info()
         }
     }
     while(!inapoi);
+    info = 0;
 }
 
 void buttons_languages_mesaj_fran()
