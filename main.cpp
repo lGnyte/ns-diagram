@@ -1,3 +1,19 @@
+//
+///███╗░░██╗░██████╗      ██████╗░██╗░█████╗░░██████╗░██████╗░░█████╗░███╗░░░███╗░██████╗
+///████╗░██║██╔════╝      ██╔══██╗██║██╔══██╗██╔════╝░██╔══██╗██╔══██╗████╗░████║██╔════╝
+///██╔██╗██║╚█████╗░      ██║░░██║██║███████║██║░░██╗░██████╔╝███████║██╔████╔██║╚█████╗░
+///██║╚████║░╚═══██╗      ██║░░██║██║██╔══██║██║░░╚██╗██╔══██╗██╔══██║██║╚██╔╝██║░╚═══██╗
+///██║░╚███║██████╔╝      ██████╔╝██║██║░░██║╚██████╔╝██║░░██║██║░░██║██║░╚═╝░██║██████╔╝
+///╚═╝░░╚══╝╚═════╝░      ╚═════╝░╚═╝╚═╝░░╚═╝░╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚═════╝░
+//
+//
+///Cɪᴏᴀᴛᴀ Iᴏᴀɴᴀ Lᴀʀɪsᴀ
+///Gʀᴀsᴜ Iᴏᴀɴ
+//
+///January 2022
+//
+#define _WIN32_WINNT 0x0500
+#include <windows.h>
 #include <graphics.h>
 #include <fstream>
 #include <winbgim.h>
@@ -195,17 +211,25 @@ void printConsoleMessage(char text[])
     outtextxy(console.x+10,console.y-30,text);
     settextstyle(10,0,1);
 }
+void bringConsoleToFront()
+{
+    HWND consoleWindow = GetConsoleWindow();
+    SetForegroundWindow(consoleWindow);
+}
 void getLanguageString(char txt[], int code)
 {
     if(LimbaSelectata.ro)
     {
         switch (code)
         {
-        case 0:
+        case -1:
             strcpy(txt,"Nou");
             break;
-        case 1:
+        case 0:
             strcpy(txt,"Genereaza");
+            break;
+        case 1:
+            strcpy(txt,"Ruleaza");
             break;
         case 2:
             strcpy(txt,"Salveaza");
@@ -237,17 +261,26 @@ void getLanguageString(char txt[], int code)
         case 11:
             strcpy(txt,"Desenator diagrama N-S");
             break;
+        case 12:
+            strcpy(txt,"Nu exista niciun program!");
+            break;
+        case 13:
+            strcpy(txt,"Compilare realizata cu succes.");
+            break;
         }
     }
     else if (LimbaSelectata.engl)
     {
         switch (code)
         {
-        case 0:
+        case -1:
             strcpy(txt,"New");
             break;
-        case 1:
+        case 0:
             strcpy(txt,"Generate");
+            break;
+        case 1:
+            strcpy(txt,"Run");
             break;
         case 2:
             strcpy(txt,"Save");
@@ -279,17 +312,26 @@ void getLanguageString(char txt[], int code)
         case 11:
             strcpy(txt,"N-S Diagram Drawer");
             break;
+        case 12:
+            strcpy(txt,"There is no code!");
+            break;
+        case 13:
+            strcpy(txt,"Code compiled successfully.");
+            break;
         }
     }
     else if (LimbaSelectata.fran)
     {
         switch(code)
         {
+         case -1:
+            strcpy(txt,"Nouveau");
+            break;
         case 0:
-            strcpy(txt,"Neuf");
+            strcpy(txt,"Generer");
             break;
         case 1:
-            strcpy(txt,"Generer");
+            strcpy(txt,"Executer");
             break;
         case 2:
             strcpy(txt,"Sauver");
@@ -304,7 +346,7 @@ void getLanguageString(char txt[], int code)
             strcpy(txt,"Collage reussi!");
             break;
         case 6:
-            strcpy(txt,"Fait. Vous pouvez maintenant generer le diagramme.");
+            strcpy(txt,"Fait. Vous pouvez generer le diagramme.");
             break;
         case 7:
             strcpy(txt,"Sauver...");
@@ -320,6 +362,12 @@ void getLanguageString(char txt[], int code)
             break;
         case 11:
             strcpy(txt,"Dessinateur Diagramme N-S");
+            break;
+        case 12:
+            strcpy(txt,"Il n'y a pas de algorithme!");
+            break;
+        case 13:
+            strcpy(txt,"Compilation terminee avec succes");
             break;
         }
     }
@@ -1120,7 +1168,7 @@ void DrawConditie(char text[], int x, int y, int Lsus)
 
 bool point_on_the_right_side(int x1, int y1, int x2, int y2, int x, int y)
 {
-    return (((x - x1)*(y2 - y1) - (y - y1)*(x2 - x1)) > 0);
+    return (((x - x1)*(y2 - y1) - (y - y1)*(x2 - x1)) >= 0);
 }
 
 bool width_too_long(char text[], int Lsus)
@@ -1131,7 +1179,7 @@ bool width_too_long(char text[], int Lsus)
 void shrink_txt_conditie(char text[], int x1, int y1, int x2, int y2, int x, int y, int Lsus)
 {
     int marime = dim;
-    while(!point_on_the_right_side(x1, y1, x2, y2, x - 1, y - 1) && marime > 1)
+    while(!point_on_the_right_side(x1, y1, x2, y2, x - 1, y) && marime > 1)
     {
         marime--;
         settextstyle(stil, 0, marime);
@@ -1139,15 +1187,15 @@ void shrink_txt_conditie(char text[], int x1, int y1, int x2, int y2, int x, int
 
     x = x1 + (Lsus - textwidth(text))/2;
     y = y1 + textheight(text);
-    if(!point_on_the_right_side(x1, y1, x2, y2, x - 1, y - 1)) /// daca nu merge cu fontul actual
+    if(!point_on_the_right_side(x1, y1, x2, y2, x - 1, y)) /// daca nu merge cu fontul actual
         settextstyle(11, 0, 1);
 
     x = x1 + (Lsus - textwidth(text))/2;
     y = y1 + textheight(text);
-    if(!point_on_the_right_side(x1, y1, x2, y2, x - 1, y - 1)) /// daca nici asa nu a mers
+    if(!point_on_the_right_side(x1, y1, x2, y2, x - 1, y)) /// daca nici asa nu a mers
     {
         marime = 5;
-        while(!point_on_the_right_side(x1, y1, x2, y2, x - 1, y - 1) && marime > 1)
+        while(!point_on_the_right_side(x1, y1, x2, y2, x - 1, y) && marime > 1)
         {
             marime--;
             settextstyle(2, 0, marime);
@@ -1250,8 +1298,8 @@ void DrawConditie_Text(char text[], int x, int y, int Lsus)
     int x_mijloc = x + Lsus/2;
     int y_mijloc = y + 3*latime;
 
-    if(!point_on_the_right_side(x, y, x_mijloc, y_mijloc, x + (Lsus - Lungime)/2 - 1, y + latime - 1))
-            shrink_txt_conditie(text, x, y, x_mijloc, y_mijloc, x + (Lsus - Lungime)/2 - 1, y + latime - 1, Lsus);
+    if(!point_on_the_right_side(x, y, x_mijloc, y_mijloc, x + (Lsus - Lungime)/2 - 1, y + latime))
+            shrink_txt_conditie(text, x, y, x_mijloc, y_mijloc, x + (Lsus - Lungime)/2 - 1, y + latime, Lsus);
     Lungime = textwidth(text);
     outtextxy(x + (Lsus - Lungime)/2, y + 2, text);
 
@@ -1620,6 +1668,12 @@ void diagram_generation()
 
     settextstyle(stil, HORIZ_DIR, dim);
     procesare("program.ns");
+
+    if(radacina==NULL){ ///empty file -> no diagram to generate
+        getLanguageString(mesaj,12);
+        printConsoleMessage(mesaj);
+        return;
+    }
     if(get_y_from_previous(radacina) > window_height)
     {
         dim--;
@@ -1720,8 +1774,7 @@ void drawConsole()  ///drawing the console
     rectangle(console.x, console.y, console.x + secWidth, secPoz.y+secHeight);
     line(console.x, console.y-35, console.x+secWidth, console.y-35);
 }
-void scriere_fisier()
-{
+void scriere_fisier() {
     FILE *prgmNS;
     prgmNS = fopen("program.ns", "w");
 
@@ -1729,13 +1782,13 @@ void scriere_fisier()
     poz output;
 
 
-    char Enter = 13;
-    char BackSpace = 8;
-    char Escape = 27;
-    char s2[2];
+    char Enter = 13,
+    BackSpace = 8,
+    Escape = 27,
+    s2[2];
     s2[1]='\0';
     char tab = 9;
-    char MultimeDeCaractereAcceptabile[MAX_STR]="0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!`@#$%+-^&*/\\()_=[],;.?<>:;{} ";
+    char MultimeDeCaractereAcceptabile[MAX_STR]="0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!`@#$%+-^&*/\\()_=[],;.?<>:;{} \"";
     char S_initial[MAX_STR];
     char tasta=0;
     char S_[MAX_STR];
@@ -1886,16 +1939,261 @@ void scriere_fisier()
     outtextxy(output.x,output.y,S_);
     setcolor(WHITE);
     outtextxy(output.x,output.y,S);
-    strcat(S," \0");
     fputs(S, prgmNS);
+    fprintf(prgmNS," \n ");
     fclose(prgmNS);
     if(paste)
         printPasteInConsole();   ///pasting ctr+v program in console
 }
+char* negare(char formula[]){
+    int i=0;
+    char aux[20];
+    while(formula[i]!=NULL){
+        if(strchr("><!", formula[i])!=NULL){
+            switch(formula[i]){
+            case '>':
+                formula[i]='<';
+                if(formula[i+1]=='='){
+                    strcpy(aux,formula+i+2);
+                    strcpy(formula+i+1, aux);
+                } else {
+                    strcpy(aux,formula+i+1);
+                    formula[i+1]='=';
+                    strcpy(formula+i+2, aux);
+                }
+                break;
+            case '<':
+                formula[i]='>';
+                if(formula[i+1]=='='){
+                    strcpy(aux,formula+i+2);
+                    strcpy(formula+i+1, aux);
+                } else {
+                    strcpy(aux,formula+i+1);
+                    formula[i+1]='=';
+                    strcpy(formula+i+2, aux);
+                }
+                break;
+            case '!':
+                formula[i]='=';
+                break;
+            }
+        }
+        else if(strstr(formula,"==")!=NULL){
+            char *s=strstr(formula,"==");
+            int j=s-formula;
+            formula[j]='!';
+            break;
+        }
+        i++;
+    }
+    if(formula[strlen(formula)-1]==';') formula[strlen(formula)-1]=NULL;
+    return formula;
+}
+
+void pseudoToC(){
+    char vars[20][31]={};
+    char line[MAX_STR], *p;
+    bool brackets=true, was_case=false;
+    FILE *prgmP, *prgmC, *fptr;
+    prgmP = fopen("program.ns", "r");
+    prgmC = fopen("C:\\Windows\\Temp\\program.cc", "w");
+
+    fprintf(prgmC, "#include <iostream>\nusing namespace std;\n\nint main() {\n");
+    fgets(line,256,prgmP);
+    p=line;
+    int tabs, depth=1;
+    while(p!=NULL && p[0]!=' '){
+        int i=0;
+        p[strlen(p)-1]=NULL;
+        tabs=1;
+        while(p[i]==9){ p=p+1; tabs++;}
+        if(depth<tabs) depth=tabs;
+        else if(depth>tabs && brackets){
+            if(was_case)tabs++;
+            while(depth>tabs){
+                for(int k=1; k<depth; k++) fputc(9, prgmC);
+                fputc('}',prgmC);
+                depth--;
+                if(strstr(p,"until")==p){
+                    fprintf(prgmC,"while(%s);", negare(p+6));
+                }
+                fputc('\n', prgmC);
+            }
+            if(was_case)tabs--;
+        }
+        if(strstr(p,"read")==p){                                ///cin
+            p=p+5;
+
+            int j=0;
+            while(vars[j][0] && j>=0){
+                if(!strcmp(vars[j],p)){
+                    for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+                    fprintf(prgmC,"cin>>%s;\n",p);
+                    j=-2;
+                }
+                j++;
+            }
+            if(j>=0){
+                strcpy(vars[j],p);
+                for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+                fprintf(prgmC,"int %s;\n",p);
+                for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+                fprintf(prgmC,"cin>>%s;\n",p);
+            }
+        } else if(strstr(p,"print")==p){                        ///cout
+            p=p+6;
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"cout<<%s;\n",p);
+        } else if(strstr(p,"init")==p){                         ///initializare
+            p=p+5;
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"int %s;\n",p);
+            int j=0;
+            while(vars[j][0]) j++;
+            strcpy(vars[j],p);
+        } else if(strstr(p,"if")==p){                           ///if
+            p=p+3;
+            p[strlen(p)-5]=NULL;
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"if(%s){\n",p);
+            brackets=true;
+        } else if(strstr(p,"else")==p){                         ///else
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            if (was_case) fputc('}',prgmC);
+            fprintf(prgmC,"else{\n");
+            brackets=true;
+        } else if(strstr(p,"while")==p){                        ///while
+            p=p+6;
+            p[strlen(p)-3]=NULL;
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"while(%s){\n",p);
+            brackets=true;
+        } else if(strstr(p,"repeat")==p){                       ///repeat
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"do{\n");
+            brackets=true;
+        } else if(strstr(p,"until")==p){                        ///until
+            brackets=true;
+        } else if(strstr(p,"for")==p){                          ///for
+            char *var, *capat1, *capat2;
+            p=p+4;
+            int j=0;
+            var=p;
+            while(p[j]!=' ') j++;
+            var[j]=NULL;
+            p=p+j+4;
+            j=0;cout<<var;
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"for(");
+            while(vars[j][0] && j>=0){cout<<vars[j]<<endl;
+                if(!strcmp(vars[j],var)){
+                    j=-2;
+                    cout<<"da";
+                }
+                j++;
+            }
+            if(j>=0) fprintf(prgmC,"int ");
+
+            j=0;
+            capat1=p;
+            while(p[j]!=' ') j++;
+            capat1[j]=NULL;
+            p=p+j+1;
+            capat2=strstr(p,"to");
+            capat2=capat2+3;
+            j=0;
+            while(capat2[j]!=' ') j++;
+            capat2[j]=NULL;
+
+            if(strstr(p,"down")!=NULL) fprintf(prgmC,"%s=%s; %s>=%s; %s--){\n", var, capat1, var, capat2, var);
+            else fprintf(prgmC,"%s=%s; %s<=%s; %s++){\n", var, capat1, var, capat2, var);
+            brackets=true;
+        } else if(strstr(p,"switch")==p){                           ///switch
+            p=p+7;
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"switch(%s){\n",p);
+            brackets=false;
+        } else if(strstr(p,"case")==p){                             ///case
+            if(was_case){
+                for(int k=1; k<=tabs+1; k++) fputc(9, prgmC);
+                fprintf(prgmC,"break;\n");
+            }
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"%s\n", p);
+            brackets=false;
+            was_case=true;
+        } else if(strstr(p,"default")==p){                          ///default
+            if(was_case){
+                for(int k=1; k<=tabs+1; k++) fputc(9, prgmC);
+                fprintf(prgmC,"break;\n");
+            }
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"%s\n", p);
+            was_case=false;
+        } else if (strstr(p,"<-")!=NULL){                           ///atribuire
+            char *aux;
+            aux=strstr(p,"<-");
+            p[aux-p-1]=NULL;
+            aux[0]='=';
+            strcpy(aux+1,aux+2);
+            for(int k=1; k<=tabs; k++) fputc(9, prgmC);
+            fprintf(prgmC,"%s %s;\n",p,aux);
+        } else if (strstr(p,"begin")!=NULL || strstr(p,"end")!=NULL){
+            brackets=true;
+        } else p=NULL;                                              ///nothing
+        if(p){
+        fgets(line,256,prgmP);
+        p=line;
+       }
+    }
+    fprintf(prgmC, "	return 0;\n}");
+
+
+    fflush(prgmC);
+    fclose(prgmC);
+
+    prgmC = fopen("C:\\Windows\\Temp\\program.cc", "r");
+
+    clearVP(console.x+1, console.y+1, secWidth-2, secHeight-20*secHeight/100-5); ///clear console
+
+    if(prgmC==NULL)
+        return;
+    poz output;
+    output.x=console.x+10;
+    output.y=console.y+5;
+    settextstyle(10,0,1);
+    while(fgets(line,256,prgmC))
+    {
+        int i=0;
+        while(line[i]==9){
+            output.x+=textwidth("    ");
+            i++;
+        }
+        outtextxy(output.x, output.y, line);
+        output.x=console.x+10;
+        output.y+=18;
+    }
+
+    fclose(prgmP);
+    fclose(prgmC);
+
+    getLanguageString(mesaj,13);
+    printConsoleMessage(mesaj);
+
+    HWND consoleWindow = GetConsoleWindow();
+    MoveWindow(consoleWindow, 0, 2*window_height/3, window_width/2, window_height/3, TRUE);
+    bringConsoleToFront();
+    system("CLS");
+
+    cout<<"Introduceti datele de intrare:\n";
+
+    system("g++ -static C:\\Windows\\Temp\\program.cc -o program.exe");
+    system("program.exe");
+}
 
 void drawButton(poz btnPoz, int btnWidth, int btnHeight, char btnText[])
 {
-    settextstyle(10,0,3);
+    settextstyle(10,0,2);
     poz txtCentered;
     txtCentered = getCenteredTextXY(btnWidth, btnHeight, btnText); ///Centering the text within the button
     setcolor(WHITE);
@@ -1913,16 +2211,16 @@ void generate_buttons (btn b[], poz ctr)   ///generating buttons for the setting
 {
     char btntext[MAX_STR];
     int i=0,
-        freespace=(secWidth-4*140-2)/8; ///calculating freespace between buttons
-    while(i<4)
+        freespace=(secWidth-5*115-2)/10; ///calculating freespace between buttons
+    while(i<=4)
     {
-        b[i].width = 140;
+        b[i].width = 115;
         b[i].height = 50;
         b[i].coord.x = ctr.x + (2*i+1)*freespace + i*b[0].width;    ///buttons automatically centered and adjusted
         b[i].coord.y = ctr.y+ (secHeight/5-b[i].height-35)/2; ///centering vertically
 
         ///get text for the button based on language
-        getLanguageString(btntext,i);
+        getLanguageString(btntext,i-1);
         strcpy(b[i].txt, btntext);
 
         drawButton(b[i].coord, b[i].width, b[i].height, b[i].txt);
@@ -1947,7 +2245,7 @@ void settingsSection()   ///the whole right half of the screen
     drawConsole();
 }
 
-void saveImage()    ///saving image of diagram
+void saveImage()    ///saving an image of the diagram
 {
     if(get_y_from_previous(radacina)-y_initial<20)
     {
@@ -2736,7 +3034,7 @@ void event_handler()   ///general event handling
         poz mouse;
         mouse.x=mousex();
         mouse.y=mousey();
-        for(int i = 0; i <= 4 - 1; i++) ///hover animation
+        for(int i = 0; i <= 4 ; i++) ///hover animation
         {
             if(isHover(mouse, i, b))
             {
@@ -2758,7 +3056,7 @@ void event_handler()   ///general event handling
         if(ismouseclick(WM_LBUTTONDOWN))   ///click handling
         {
             clearmouseclick(WM_LBUTTONDOWN);
-            for(int i=0; i<=3; i++)
+            for(int i=0; i<=4; i++)
             {
                 if(isHover(mouse, i, b))
                 {
@@ -2769,11 +3067,15 @@ void event_handler()   ///general event handling
                         break;
                     case 1:                     ///Diagram generates
                         diagram_generation();
+                        printPasteInConsole();
                         break;
-                    case 2:                     ///Save an image of the diagram
+                    case 2:                     ///Run
+                        pseudoToC();
+                        break;
+                    case 3:                     ///Save an image of the diagram
                         saveImage();
                         break;
-                    case 3:                     ///Back button
+                    case 4:                     ///Back button
                         inapoi=true;
                     }
                 }
@@ -2852,6 +3154,7 @@ void fereastra_meniu()
                         break;
                     case 3:
                         closegraph();
+                        printf("\n\nHave a great day! :)\n\n");
                         return;
                         break;
                     }
@@ -2868,7 +3171,7 @@ void fereastra_meniu()
 int main()
 {
     initwindow(window_width, window_height,"NS-diagram drawer");
-    LimbaSelectata.engl = 1;
+    LimbaSelectata.ro = 1;
     fereastra_meniu();
     return 0;
 }
